@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Primo mesetto 💘</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      text-align: center;
+      font-family: "Comic Sans MS", sans-serif;
+      background-color: #fff0f5;
+      margin: 0;
+      padding: 0;
+    }
+    canvas {
+      border: 2px solid #ff69b4;
+      background-color: #fff;
+      max-width: 100%;
+      height: auto;
+      touch-action: manipulation;
+    }
+    #score, #timer {
+      font-size: 22px;
+      margin: 10px;
+      color: #d6006d;
+    }
+    #message {
+      font-size: 18px;
+      color: #99004d;
+      margin: 10px;
+    }
+    #playMusicBtn, #restartBtn {
+      background-color: #ff66b2;
+      border: none;
+      padding: 10px 20px;
+      font-size: 18px;
+      color: white;
+      border-radius: 20px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    #restartBtn {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Bellissimo, cattura il mio cuoricino! ❤️🎯</h1>
+
+  <audio id="musica" src="musica.mp3" preload="auto"></audio>
+  <button id="playMusicBtn">🎵 Avvia la musica</button>
+
+  <div id="score">Punti: 0</div>
+  <div id="timer">Tempo: 30s</div>
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+  <p id="message">Clicca sul cuore per iniziare! 💘</p>
+  <button id="restartBtn">🔄 Gioca di nuovo</button>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const message = document.getElementById('message');
+    const scoreDisplay = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer');
+    const musica = document.getElementById('musica');
+    const playMusicBtn = document.getElementById('playMusicBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    let heartX = 200;
+    let heartY = 200;
+    const heartSize = 30;
+    let score = 0;
+    let gameOver = false;
+    let gameStarted = false;
+    let secondsLeft = 30;
+    let countdown;
+    let heartInterval;
+
+    function drawHeart(x, y, size) {
+      ctx.fillStyle = '#ff3366';
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.bezierCurveTo(x, y - size / 2, x - size, y - size / 2, x - size, y + size / 3);
+      ctx.bezierCurveTo(x - size, y + size, x - size / 2, y + size * 1.4, x, y + size * 1.8);
+      ctx.bezierCurveTo(x + size / 2, y + size * 1.4, x + size, y + size, x + size, y + size / 3);
+      ctx.bezierCurveTo(x + size, y - size / 2, x + size / 2, y - size / 2, x, y);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawHeart(heartX, heartY, heartSize);
+    }
+
+    function moveHeart() {
+      if (gameOver) return;
+      heartX = Math.random() * (canvas.width - heartSize * 2) + heartSize;
+      heartY = Math.random() * (canvas.height - heartSize * 2) + heartSize;
+      draw();
+    }
+
+    function addScore(points) {
+      score += points;
+      scoreDisplay.textContent = `Punti: ${score}`;
+    }
+
+    function flashHeart() {
+      drawHeart(heartX, heartY, heartSize + 8);
+      setTimeout(draw, 150);
+    }
+
+    function startGame() {
+      gameStarted = true;
+      countdown = setInterval(() => {
+        secondsLeft--;
+        timerDisplay.textContent = `Tempo: ${secondsLeft}s`;
+
+        if (secondsLeft <= 0) {
+          clearInterval(countdown);
+          clearInterval(heartInterval);
+          gameOver = true;
+          timerDisplay.textContent = "Tempo scaduto!";
+          message.textContent = `Buon primo mesetto tato❤️ Hai fatto ${score} punti!`;
+          restartBtn.style.display = 'inline-block';
+        }
+      }, 1000);
+
+      heartInterval = setInterval(moveHeart, 1200);
+    }
+
+    canvas.addEventListener('click', function (e) {
+      if (gameOver) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      const dx = clickX - heartX;
+      const dy = clickY - heartY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < heartSize) {
+        if (!gameStarted) {
+          startGame();
+        }
+        addScore(20);
+        message.textContent = 'Mi hai catturato! +20 ❤️';
+        flashHeart();
+        moveHeart();
+      } else {
+        message.textContent = 'Riprova! 💔';
+      }
+    });
+
+    // Musica al click
+    playMusicBtn.addEventListener('click', () => {
+      musica.play();
+      playMusicBtn.style.display = 'none';
+    });
+
+    // Restart
+    restartBtn.addEventListener('click', () => {
+  // Reset variabili
+  score = 0;
+  secondsLeft = 30;
+  gameOver = false;
+  gameStarted = false;
+  scoreDisplay.textContent = `Punti: 0`;
+  timerDisplay.textContent = `Tempo: 30s`;
+  message.textContent = 'Clicca sul cuore per iniziare! 💘';
+  restartBtn.style.display = 'none';
+
+  clearInterval(countdown);
+  clearInterval(heartInterval);
+
+  heartX = 200;
+  heartY = 200;
+  draw();
+});
+
+
+    draw(); // iniziale
+  </script>
+</body>
+</html>
