@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Primo mesetto 💘</title>
+  <title>Secondo mesetto 💘</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -19,6 +19,12 @@
       height: auto;
       touch-action: manipulation;
     }
+    @media (max-width: 500px) {
+      canvas {
+        width: 90vw;
+        height: 90vw;
+      }
+    }
     #score, #timer {
       font-size: 22px;
       margin: 10px;
@@ -28,8 +34,12 @@
       font-size: 18px;
       color: #99004d;
       margin: 10px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      white-space: pre-line;
     }
-    #playMusicBtn, #restartBtn {
+    #restartBtn, #resetScoresBtn {
       background-color: #ff66b2;
       border: none;
       padding: 10px 20px;
@@ -42,13 +52,23 @@
     #restartBtn {
       display: none;
     }
+    #resetScoresBtn {
+      padding: 8px 16px;
+      font-size: 16px;
+      border-radius: 12px;
+      margin-top: 10px;
+    }
+    #highScores {
+      font-size: 18px;
+      color: #d6006d;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <h1>Bellissimo, cattura il mio cuoricino! ❤️🎯</h1>
 
   <audio id="musica" src="musica.mp3" preload="auto"></audio>
-  <button id="playMusicBtn">🎵 Avvia la musica</button>
 
   <div id="score">Punti: 0</div>
   <div id="timer">Tempo: 30s</div>
@@ -56,15 +76,19 @@
   <p id="message">Clicca sul cuore per iniziare! 💘</p>
   <button id="restartBtn">🔄 Gioca di nuovo</button>
 
+  <div id="highScores"></div>
+  <button id="resetScoresBtn">🔄 Reset Classifica</button>
+
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const message = document.getElementById('message');
     const scoreDisplay = document.getElementById('score');
     const timerDisplay = document.getElementById('timer');
+    const highScoresDiv = document.getElementById('highScores');
     const musica = document.getElementById('musica');
-    const playMusicBtn = document.getElementById('playMusicBtn');
     const restartBtn = document.getElementById('restartBtn');
+    const resetScoresBtn = document.getElementById('resetScoresBtn');
 
     let heartX = 200;
     let heartY = 200;
@@ -74,10 +98,24 @@
     let gameStarted = false;
     let secondsLeft = 30;
     let countdown;
-    let heartInterval;
 
-    function drawHeart(x, y, size) {
-      ctx.fillStyle = '#ff3366';
+    const trail = [];
+    const particles = [];
+    const heartColors = ['#ff99cc', '#ff6699', '#ff3366'];
+
+    // Livello e cuori speciali
+    let difficulty = 'medio'; // default
+    const difficultySettings = {
+      facile: { time: 40, speed: 1000, heartSize: 40 },
+      medio: { time: 30, speed: 600, heartSize: 30 },
+      difficile: { time: 20, speed: 400, heartSize: 20 }
+    };
+
+    // Tipi di cuore: normale, oro (+50), nero (-10)
+    let currentHeartType = 'normal';
+
+    function drawHeart(x, y, size, color = '#ff3366') {
+      ctx.fillStyle = color;
       ctx.beginPath();
       ctx.moveTo(x, y);
       ctx.bezierCurveTo(x, y - size / 2, x - size, y - size / 2, x - size, y + size / 3);
@@ -88,99 +126,225 @@
       ctx.fill();
     }
 
+    function drawSmallHeart(x, y, size, alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = heartColors[Math.floor(Math.random() * heartColors.length)];
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.bezierCurveTo(x, y - size / 2, x - size, y - size / 2, x - size, y + size / 3);
+      ctx.bezierCurveTo(x - size, y + size, x - size / 2, y + size * 1.4, x, y + size * 1.8);
+      ctx.bezierCurveTo(x + size / 2, y + size * 1.4, x + size, y + size, x + size, y + size / 3);
+      ctx.bezierCurveTo(x + size, y - size / 2, x + size / 2, y - size / 2, x, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawHeart(heartX, heartY, heartSize);
+      trail.forEach(t => drawSmallHeart(t.x, t.y, t.size, t.alpha));
+      particles.forEach(p => drawSmallHeart(p.x, p.y, p.size, p.alpha));
+      let color = '#ff3366';
+      if(currentHeartType === 'gold') color = 'gold';
+      if(currentHeartType === 'black') color = 'black';
+      drawHeart(heartX, heartY, difficultySettings[difficulty].heartSize, color);
     }
 
     function moveHeart() {
       if (gameOver) return;
-      heartX = Math.random() * (canvas.width - heartSize * 2) + heartSize;
-      heartY = Math.random() * (canvas.height - heartSize * 2) + heartSize;
-      draw();
+      const newX = Math.random() * (canvas.width - difficultySettings[difficulty].heartSize * 2) + difficultySettings[difficulty].heartSize;
+      const newY = Math.random() * (canvas.height - difficultySettings[difficulty].heartSize * 2) + difficultySettings[difficulty].heartSize;
+      animateHeartLinear(heartX, heartY, newX, newY, difficultySettings[difficulty].speed);
+    }
+
+    function animateHeartLinear(startX, startY, endX, endY, duration) {
+      const startTime = performance.now();
+      function step(currentTime) {
+        if (gameOver) return;
+        const elapsed = currentTime - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        heartX = startX + (endX - startX) * t;
+        heartY = startY + (endY - startY) * t;
+
+        if (Math.random() < 0.3) {
+          trail.push({ x: heartX, y: heartY, size: Math.random() * 6 + 4, alpha: 1 });
+        }
+
+        for (let i = trail.length - 1; i >= 0; i--) {
+          trail[i].alpha -= 0.02;
+          if (trail[i].alpha <= 0) trail.splice(i, 1);
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha -= 0.03;
+          if (p.alpha <= 0) particles.splice(i, 1);
+        }
+
+        draw();
+        if (t < 1) requestAnimationFrame(step);
+        else {
+          // Decide se il prossimo cuore è bonus/malus
+          const rand = Math.random();
+          if(rand < 0.1) currentHeartType = 'gold'; 
+          else if(rand < 0.2) currentHeartType = 'black';
+          else currentHeartType = 'normal';
+          moveHeart();
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function createHeartParticles(x, y, count = 10) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * 2 * Math.PI;
+        const speed = Math.random() * 2 + 1;
+        particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          size: Math.random() * 5 + 2,
+          alpha: 1
+        });
+      }
     }
 
     function addScore(points) {
       score += points;
+      if(score < 0) score = 0;
       scoreDisplay.textContent = `Punti: ${score}`;
-    }
-
-    function flashHeart() {
-      drawHeart(heartX, heartY, heartSize + 8);
-      setTimeout(draw, 150);
     }
 
     function startGame() {
       gameStarted = true;
+      secondsLeft = difficultySettings[difficulty].time;
+      timerDisplay.textContent = `Tempo: ${secondsLeft}s`;
       countdown = setInterval(() => {
         secondsLeft--;
         timerDisplay.textContent = `Tempo: ${secondsLeft}s`;
-
         if (secondsLeft <= 0) {
           clearInterval(countdown);
-          clearInterval(heartInterval);
           gameOver = true;
           timerDisplay.textContent = "Tempo scaduto!";
-          message.textContent = `Buon primo mesetto tato❤️ Hai fatto ${score} punti!`;
+          showFinalMessage();
+          updateHighScores(score);
           restartBtn.style.display = 'inline-block';
         }
       }, 1000);
+      moveHeart();
+    }
 
-      heartInterval = setInterval(moveHeart, 1200);
+    function showFinalMessage() {
+      message.textContent = `Grazie di esserci, davvero. Sei capace di rendere speciale anche le cose più semplici, e con te ogni momento, anche quello più piccolo, riesce a cambiare la mia giornata. Sai come farmi sorridere anche quando non ho voglia di parlare, e questo è qualcosa che conta davvero tanto.\n\nQuesto giochino è solo un modo un po’ buffo per dirti che, nel mio mondo, tu sei la cosa più bella che ho.\n\nSei quella presenza che non fa mai troppo rumore, ma che scalda tutto. La risata che rimane anche dopo, quell’energia che ti fa sentire a casa anche quando sei lontano.\n\nCon te tutto sembra più leggero, anche le giornate no. Grazie per esserci, per essere proprio così.`;
+    }
+
+    function updateHighScores(newScore) {
+      let scores = JSON.parse(localStorage.getItem('highScores') || '[]');
+      const playerName = prompt("Come ti chiami, campione?") || "Anonimo";
+      scores.push({ name: playerName, score: newScore });
+      scores.sort((a, b) => b.score - a.score);
+      scores = scores.slice(0, 5);
+      localStorage.setItem('highScores', JSON.stringify(scores));
+      showHighScores();
+    }
+
+    function showHighScores() {
+      const scores = JSON.parse(localStorage.getItem('highScores') || '[]');
+      if (scores.length === 0) {
+        highScoresDiv.innerHTML = '<h3>🏆 Classifica</h3><p>Nessun punteggio ancora.</p>';
+      } else {
+        highScoresDiv.innerHTML = '<h3>🏆 Classifica</h3><ol>' + scores.map(s => `<li>${s.name}: ${s.score} punti</li>`).join('') + '</ol>';
+      }
     }
 
     canvas.addEventListener('click', function (e) {
       if (gameOver) return;
-
       const rect = canvas.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
       const clickY = e.clientY - rect.top;
-
       const dx = clickX - heartX;
       const dy = clickY - heartY;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
-      if (distance < heartSize) {
-        if (!gameStarted) {
-          startGame();
+      if (distance < difficultySettings[difficulty].heartSize) {
+        if (!gameStarted) startGame();
+        if(currentHeartType === 'gold') {
+          addScore(50);
+          message.textContent = 'Cuore d’oro! +50 punti ✨';
         }
-        addScore(20);
-        message.textContent = 'Mi hai catturato! +20 ❤️';
-        flashHeart();
-        moveHeart();
+        else if(currentHeartType === 'black') {
+          addScore(-10);
+          message.textContent = 'Cuore nero! -10 punti 🖤';
+        }
+        else {
+          addScore(20);
+          message.textContent = 'Mi hai catturato! +20 ❤️';
+        }
+        createHeartParticles(heartX, heartY);
       } else {
         message.textContent = 'Riprova! 💔';
       }
     });
 
-    // Musica al click
-    playMusicBtn.addEventListener('click', () => {
-      musica.play();
-      playMusicBtn.style.display = 'none';
+    // Avvio musica al primo click/tocco
+    document.body.addEventListener('click', () => {
+      musica.play().catch(() => {});
+    }, { once: true });
+
+    restartBtn.addEventListener('click', () => {
+      score = 0;
+      gameOver = false;
+      gameStarted = false;
+      scoreDisplay.textContent = `Punti: 0`;
+      difficulty = difficultySelect.value;
+      secondsLeft = difficultySettings[difficulty].time;
+      timerDisplay.textContent = `Tempo: ${secondsLeft}s`;
+      message.textContent = 'Clicca sul cuore per iniziare! 💘';
+      restartBtn.style.display = 'none';
+      heartX = 200;
+      heartY = 200;
+      trail.length = 0;
+      particles.length = 0;
+      draw();
     });
 
-    // Restart
-    restartBtn.addEventListener('click', () => {
-  // Reset variabili
-  score = 0;
-  secondsLeft = 30;
-  gameOver = false;
-  gameStarted = false;
-  scoreDisplay.textContent = `Punti: 0`;
-  timerDisplay.textContent = `Tempo: 30s`;
-  message.textContent = 'Clicca sul cuore per iniziare! 💘';
-  restartBtn.style.display = 'none';
+    resetScoresBtn.addEventListener('click', () => {
+      localStorage.removeItem('highScores');
+      showHighScores();
+      message.textContent = 'Classifica resettata! 🔄';
+    });
 
-  clearInterval(countdown);
-  clearInterval(heartInterval);
+    // Selettore difficoltà
+    const difficultySelect = document.createElement('select');
+    ['facile', 'medio', 'difficile'].forEach(level => {
+      const option = document.createElement('option');
+      option.value = level;
+      option.textContent = level.charAt(0).toUpperCase() + level.slice(1);
+      if(level === 'medio') option.selected = true;
+      difficultySelect.appendChild(option);
+    });
+    difficultySelect.style.fontSize = '18px';
+    difficultySelect.style.margin = '10px';
+    document.body.insertBefore(difficultySelect, scoreDisplay);
 
-  heartX = 200;
-  heartY = 200;
-  draw();
-});
+    difficultySelect.addEventListener('change', () => {
+      difficulty = difficultySelect.value;
+      secondsLeft = difficultySettings[difficulty].time;
+      timerDisplay.textContent = `Tempo: ${secondsLeft}s`;
+      message.textContent = 'Clicca sul cuore per iniziare! 💘';
+      if(gameStarted) {
+        clearInterval(countdown);
+        gameOver = true;
+        restartBtn.style.display = 'inline-block';
+      }
+    });
 
-
-    draw(); // iniziale
+    showHighScores();
+    draw();
   </script>
 </body>
 </html>
