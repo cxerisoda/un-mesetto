@@ -244,7 +244,7 @@
 
     function updateHighScores(newScore) {
       let scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-      const playerName = prompt("nome,nome?") || "Anonimo";
+      const playerName = prompt("chi sei?>.<") || "Anonimo";
       scores.push({ name: playerName, score: newScore });
       scores.sort((a, b) => b.score - a.score);
       scores = scores.slice(0, 5);
