@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Secondo mesetto 💘</title>
+  <title>terzo mesetto 💘</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -66,7 +66,7 @@
   </style>
 </head>
 <body>
-  <h1>Bellissimo, cattura il mio cuoricino! ❤️🎯</h1>
+  <h1>Sai cosa fare! ❤️🎯</h1>
 
   <audio id="musica" src="musica.mp3" preload="auto"></audio>
 
@@ -239,12 +239,12 @@
     }
 
     function showFinalMessage() {
-      message.textContent = `Ed eccoci qui, dopo due mesi, non so davvero cosa dire se non: Grazie di esserci, davvero. Sei capace di rendere speciale anche le cose più semplici, e con te ogni momento, anche quello più piccolo, riesce a cambiare la mia giornata. Sai come farmi sorridere anche quando non ho voglia di parlare, e questo è qualcosa che conta davvero tanto.\n\nQuesto giochino è solo un modo un po’ buffo per dirti che, nel mio mondo, tu sei la cosa più bella che ho.\n\nSei quella presenza che non fa mai troppo rumore, ma che scalda tutto. La risata che rimane anche dopo, quell’energia che ti fa sentire a casa anche quando sei lontano.\n\nCon te tutto sembra più leggero, anche le giornate no. Grazie per esserci, per essere proprio così.`;
+      message.textContent = `Tre mesetti amore mio, grazie per questi mesi meravigliosi.`;
     }
 
     function updateHighScores(newScore) {
       let scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-      const playerName = prompt("Come ti chiami, campione?") || "Anonimo";
+      const playerName = prompt("nome, nome?") || "idk";
       scores.push({ name: playerName, score: newScore });
       scores.sort((a, b) => b.score - a.score);
       scores = scores.slice(0, 5);
@@ -348,3 +348,4 @@
   </script>
 </body>
 </html>
+
