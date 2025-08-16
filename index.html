@@ -8,13 +8,13 @@
     body {
       text-align: center;
       font-family: "Comic Sans MS", sans-serif;
-      background-color: #fff0f5;
+      background-color: #98ff98;
       margin: 0;
       padding: 0;
     }
     canvas {
-      border: 2px solid #ff69b4;
-      background-color: #fff;
+      border: 2px solid #00b383;
+      background-color: #aefdb1;
       max-width: 100%;
       height: auto;
       touch-action: manipulation;
@@ -28,11 +28,11 @@
     #score, #timer {
       font-size: 22px;
       margin: 10px;
-      color: #d6006d;
+      color: #00b383;
     }
     #message {
       font-size: 18px;
-      color: #99004d;
+      color: #00b383;
       margin: 10px;
       max-width: 400px;
       margin-left: auto;
@@ -40,11 +40,11 @@
       white-space: pre-line;
     }
     #restartBtn, #resetScoresBtn {
-      background-color: #ff66b2;
+      background-color: #a150cd;
       border: none;
       padding: 10px 20px;
       font-size: 18px;
-      color: white;
+      color: rgb(255, 255, 255);
       border-radius: 20px;
       cursor: pointer;
       margin: 10px;
@@ -60,7 +60,7 @@
     }
     #highScores {
       font-size: 18px;
-      color: #d6006d;
+      color: #008763;
       margin-top: 20px;
     }
   </style>
@@ -239,12 +239,12 @@
     }
 
     function showFinalMessage() {
-      message.textContent = `Grazie di esserci, davvero. Sei capace di rendere speciale anche le cose più semplici, e con te ogni momento, anche quello più piccolo, riesce a cambiare la mia giornata. Sai come farmi sorridere anche quando non ho voglia di parlare, e questo è qualcosa che conta davvero tanto.\n\nQuesto giochino è solo un modo un po’ buffo per dirti che, nel mio mondo, tu sei la cosa più bella che ho.\n\nSei quella presenza che non fa mai troppo rumore, ma che scalda tutto. La risata che rimane anche dopo, quell’energia che ti fa sentire a casa anche quando sei lontano.\n\nCon te tutto sembra più leggero, anche le giornate no. Grazie per esserci, per essere proprio così.`;
+      message.textContent = `Ed eccoci qui, dopo due mesi, non so davvero cosa dire se non: Grazie di esserci, davvero. Sei capace di rendere speciale anche le cose più semplici, e con te ogni momento, anche quello più piccolo, riesce a cambiare la mia giornata. Sai come farmi sorridere anche quando non ho voglia di parlare, e questo è qualcosa che conta davvero tanto.\n\nQuesto giochino è solo un modo un po’ buffo per dirti che, nel mio mondo, tu sei la cosa più bella che ho.\n\nSei quella presenza che non fa mai troppo rumore, ma che scalda tutto. La risata che rimane anche dopo, quell’energia che ti fa sentire a casa anche quando sei lontano.\n\nCon te tutto sembra più leggero, anche le giornate no. Grazie per esserci, per essere proprio così.`;
     }
 
     function updateHighScores(newScore) {
       let scores = JSON.parse(localStorage.getItem('highScores') || '[]');
-      const playerName = prompt("chi sei?>.<") || "Anonimo";
+      const playerName = prompt("Come ti chiami, campione?") || "Anonimo";
       scores.push({ name: playerName, score: newScore });
       scores.sort((a, b) => b.score - a.score);
       scores = scores.slice(0, 5);
